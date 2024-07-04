@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cf-whisper</title>
+    <link
+      rel="shortcut icon"
+      href="./assets/zipper-mouth-face.png"
+      type="image/png"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/spacelab/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+  </head>
+  <body>
+    <div class="container py-5" x-data="root">
+      <h1 class="mt-0 mb-3">Cloudflare Whisper</h1>
+
+      <div class="row">
+        <div class="col-12">
+          <div class="mb-3">
+            <label class="form-label">Microphone</label>
+            <select
+              name="deviceId"
+              x-model="activeDeviceId"
+              class="form-control"
+              :disabled="isRecording || isTranscribing"
+            >
+              <template x-for="dev in devices">
+                <option :value="dev.id" x-text="dev.label"></option>
+              </template>
+            </select>
+          </div>
+        </div>
+        <div class="col-sm">
+          <div class="mb-3">
+            <button
+              type="button"
+              class="w-100 btn btn-lg btn-primary"
+              :disabled="!activeDeviceId || isRecording || isTranscribing"
+              @click="startRecord(activeDeviceId)"
+            >
+              <i class="bi-mic"></i>
+              Start recording
+            </button>
+          </div>
+        </div>
+        <div class="col-sm">
+          <div class="mb-3">
+            <button
+              type="button"
+              class="w-100 btn btn-lg btn-danger"
+              :disabled="!isRecording || isTranscribing"
+              @click="stopRecord()"
+            >
+              <i class="bi-stop-circle"></i>
+              Stop recording
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div x-show="isRecording" class="text-center">
+        <div>
+          Recorded time (Maximum
+          <span x-text="maxRecordingInSeconds"></span> seconds):
+        </div>
+        <h2 x-text="recordingTime"></h2>
+      </div>
+      <hr />
+
+      <div class="mb-3">
+        <label class="form-label">
+          Cloudflare proxy URL
+          <a href="#" @click.prevent="showHelpProxyUrl = !showHelpProxyUrl"
+            >(What?)</a
+          >
+        </label>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="https://random-namespace-123.username.workers.dev/"
+          x-model="proxyUrl"
+          :disabled="isRecording || isTranscribing"
+        />
+
+        <div class="alert alert-warning mt-3" x-show="showHelpProxyUrl">
+          <p>
+            <b>Cloudflare proxy URL</b> is a Cloudflare Worker that proxies the
+            request from this webpage, to Cloudflare servers. The webpage cannot
+            directly call Cloudflare servers due to
+            <a
+              href="https://en.wikipedia.org/wiki/Cross-origin_resource_sharing"
+              class="alert-link"
+              >CORS</a
+            >.
+          </p>
+          <p>If you need a quick and dirty proxy:</p>
+          <ol>
+            <li>
+              Get started with
+              <a
+                href="https://developers.cloudflare.com/workers-ai/get-started/dashboard/"
+                >Cloudflare</a
+              >
+            </li>
+            <li>
+              Create a new Worker based on the template
+              <b>Speech to Text App</b>
+            </li>
+            <li>
+              Replace the contents of <code>index.js</code> with the contents
+              from <a href="./assets/sample-script.js">this script</a>
+            </li>
+            <li>Copy the deployment URL, paste it in the field above</li>
+          </ol>
+          <button
+            type="button"
+            class="btn btn-secondary"
+            @click="showHelpProxyUrl = false"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>MP3</th>
+              <th>Transcribe</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr x-show="recordEntries.length === 0">
+              <td colspan="3">
+                <div class="py-3 text-center">No audio recorded</div>
+              </td>
+            </tr>
+            <template x-for="(entry, index) in recordEntries">
+              <tr>
+                <td><span x-text="index + 1"></span></td>
+                <td>
+                  <div x-text="entry.time"></div>
+                  <div>
+                    <audio :src="entry.url" controls></audio>
+                  </div>
+                  <div>
+                    <a :href="entry.url" target="_blank">
+                      <i class="bi-box-arrow-up-right"></i>
+                      Open MP3 in new tab (<span x-text="entry.size"></span> MB)
+                    </a>
+                  </div>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    class="btn btn-outline-primary"
+                    x-show="entry.text === ''"
+                    :disabled="isRecording || isTranscribing"
+                    @click="transcribe(index, proxyUrl)"
+                  >
+                    <i class="bi-chat-dots"></i>
+                    Transcribe audio
+                  </button>
+
+                  <span x-text="entry.text"></span>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script type="module" defer src="./assets/main.mjs"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"
+    ></script>
+  </body>
+</html>
