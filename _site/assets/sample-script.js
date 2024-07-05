@@ -32,14 +32,15 @@ export default {
       const buffer = await file.arrayBuffer();
 
       // https://developers.cloudflare.com/workers-ai/models/#automatic-speech-recognition
-      const response = await env.AI.run("@cf/openai/whisper", {
+      const model = "@cf/openai/whisper";
+      const response = await env.AI.run(model, {
         audio: [...new Uint8Array(buffer)],
       });
 
       return Response.json(response, { headers: { ...corsHeaders } });
     } catch (err) {
       console.error("Error processing request:", err);
-      return new Response("Internal Server Error", {
+      return new Response("Internal server error", {
         status: 500,
         headers: { ...corsHeaders },
       });

@@ -140,7 +140,7 @@ document.addEventListener("alpine:init", () => {
         });
 
         if (!res.ok) {
-          alert("Error while transcribing! Please check the proxy logs.");
+          alert("Error while transcribing! Please check the logs in proxy.");
           this.isTranscribing = false;
           return;
         }
